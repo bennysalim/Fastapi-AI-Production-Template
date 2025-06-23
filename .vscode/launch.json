@@ -12,7 +12,6 @@
           "--reload"
         ],
         "console": "integratedTerminal",
-        "envFile": "${workspaceFolder}/.env",
         "cwd": "${workspaceFolder}"
       }
     ]
