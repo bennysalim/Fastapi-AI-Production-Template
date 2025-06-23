@@ -1,5 +1,8 @@
 """Agents router: Generate NYT-style articles using LangChain and OpenAI."""
 
+from enum import Enum
+import os
+from dotenv import load_dotenv
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
@@ -11,6 +14,8 @@ from langchain_groq import ChatGroq
 from datetime import datetime
 from newspaper import Article
 
+load_dotenv()
+
 router = APIRouter(
     prefix="/agents",
     tags=["agents"],
@@ -18,7 +23,7 @@ router = APIRouter(
 )
 
 # Inisialisasi model (sama dengan GPT-4o di phi)
-llm = ChatGroq(model_name="gpt-4o")
+llm = ChatGroq(model_name="gemma2-9b-it", api_key=os.getenv("GROQ_API_KEY"))
 
 # Langkah 1: Cari artikel dari DuckDuckGo
 search_tool = DuckDuckGoSearchResults()
@@ -79,5 +84,44 @@ async def generate_article_api(req: ArticleRequest):
     content = extract_articles(links)
     if not content:
         return {"error": "Failed to extract article content from any links."}
-    response = chain.run(topic=topic, content=content, date=datetime.now().strftime("%B %d, %Y"))
-    return {"article": response}
+    response = chain.invoke({"topic":topic, "content":content, "date":datetime.now().strftime("%B %d, %Y")})
+    return {"article": str(response)}
+
+
+class TicketStatusEnum(str, Enum):
+    submit="SUBMIT"
+    checking_process="CHECKING_PROCESS"
+    need_payment_process="NEED_PAYMENT_PROCESS"
+    paid_and_work_in_progress="PAID_AND_WORK_IN_PROGRESS"
+    handle_and_complete="HANDLE_AND_COMPLETE"
+
+class TicketTypeEnum(str, Enum):
+    complain="COMPLAIN"
+    request="REQUEST"
+    report="REPORT"
+
+class AgentInferenceEnum(str, Enum):
+    ticket_creation="TICKET_CREATION",
+    retrieve_ticket="RETRIEVE_TICKET",
+    close_ticket="CLOSE_TICKET",
+    irrelevant="IRRELEVANT"
+
+class TicketTransModel(BaseModel):
+    prompt_answer:str
+    project:str
+    unit:str
+    ticket_summary:str
+    ticket:TicketStatusEnum
+    type:TicketTypeEnum
+    agent_inference:AgentInferenceEnum
+
+class SimplePromptRequest(BaseModel):
+    prompt: str
+
+@router.post("/json-builder", summary="Extract user's prompt into valid JSON object")
+async def json_builder_api(req:SimplePromptRequest):
+    """
+    Generate new JSON format
+    """
+    response = llm.with_structured_output(TicketTransModel).invoke(req.prompt)
+    return response
