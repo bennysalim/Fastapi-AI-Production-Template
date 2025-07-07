@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 
+from app.schemas.chat_schema import ChatRequest, ChatResponse
+
 load_dotenv()
 
 router = APIRouter(
@@ -16,12 +18,6 @@ router = APIRouter(
     tags=["chatbot"],
     responses={404: {"description": "Not found"}}
 )
-
-class ChatRequest(BaseModel):
-    question: str
-
-class ChatResponse(BaseModel):
-    answer: str
 
 llm = ChatGroq(
     model="gemma2-9b-it",
@@ -58,3 +54,8 @@ async def ask_question(request: ChatRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# @router.post('/create-session', response_model=ChatResponse, summary="Create a new chat session")
+# async def createSession(request: ChatSessionBase):
+#     try:
+        

@@ -1,4 +1,5 @@
 from fastapi import Request, HTTPException
+
 from .logger import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 import time
