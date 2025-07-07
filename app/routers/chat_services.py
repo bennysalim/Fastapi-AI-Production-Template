@@ -4,7 +4,7 @@ from sqlmodel import asc, desc, select
 from app.config.db_config import get_session
 from app.model.chat_content import ChatContent
 from app.model.chat_session import ChatSession
-from app.schemas.chat_schema import ChatRequest, ChatResponse
+from app.schemas.chat_schema import ChatRequest, ChatResponse, ChatSummary
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from app.config.llm_config import llm
@@ -58,6 +58,23 @@ async def continue_chat(request: ChatRequest, id: str, db: AsyncSession = Depend
         await db.commit()
         db.close()
         
+        return answer
+    except Exception as e:
+        db.rollback()
+        db.close()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/chat-summary/{id}", response_model=ChatSummary, summary="Summarize prompt")
+async def summarize_chat(id: str, db: AsyncSession = Depends(get_session)):
+    try:
+        query = select(ChatContent).where(ChatContent.chat_session_id == id).order_by(desc(ChatContent.created_at))
+        messages = list(map(lambda x: HumanMessage(content=x.content) if x.role == "human" else AIMessage(content=x.content), await db.scalars(query)))
+        prompt_history=ChatPromptTemplate.from_messages([
+            *messages,
+            MessagesPlaceholder(variable_name="question"),
+            
+        ])
+        answer:ChatSummary=llm.with_structured_output(ChatSummary).invoke(prompt_history.invoke({"question": [HumanMessage(content='Please summarize above prompts')]}))
         return answer
     except Exception as e:
         db.rollback()

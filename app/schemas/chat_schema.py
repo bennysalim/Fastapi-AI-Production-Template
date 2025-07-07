@@ -7,3 +7,6 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     title:str
     long_answer: str
+
+class ChatSummary(BaseModel):
+    very_long_summary:str
