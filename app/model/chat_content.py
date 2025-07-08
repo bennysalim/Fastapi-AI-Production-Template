@@ -1,17 +1,18 @@
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
-from pgvector.sqlalchemy import Vector
-from app.model.base_model import BaseModel, BaseULIDModel
-
-from typing import TYPE_CHECKING, Annotated
-
+from app.model.base_model import BaseModel
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from app.model.chat_session import ChatSession
 
 class ChatContentBase(SQLModel):
     chat_session_id:str = Field(nullable=False, foreign_key="chat_session.id")
     content:str = Field(nullable=False)
-    # embedding: Annotated[list[float], Field(sa_column=Column(Vector(1536)))]
+    embedding: Optional[list[float]] = Field(
+        default=None,
+        sa_column=Column(Vector(384), nullable=True)
+    )
     role:str = Field(nullable=False)
 
     class Config:
