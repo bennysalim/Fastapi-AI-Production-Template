@@ -12,6 +12,9 @@ from langchain_core.messages import HumanMessage, AIMessage
 from app.config.llm_config import llm
 from app.config.sbert_config import sbert_model
 from sqlalchemy.orm import selectinload
+from app.schemas.chat_session_schema import ChatSessionSchema
+from app.services.chat_service import start_new_chat
+
 router=APIRouter(
     prefix="/chat",
     tags=["chat"],
@@ -19,26 +22,8 @@ router=APIRouter(
 
 @router.post("/start-chat", response_model=ChatResponse, summary="Start new AI chat session")
 async def start_chat(request: ChatRequest, db: AsyncSession = Depends(get_session)):
-    try:
-        formatted_prompt: ChatResponse = llm.with_structured_output(ChatResponse).invoke(request.question)
-        session_obj: ChatSession = ChatSession(title=formatted_prompt.title)
-        db.add(session_obj)
-        
-        await db.flush()  # Ensure session_obj.id is populated
-        
-        db.add_all([
-            ChatContent(chat_session_id=session_obj.id, content=request.question, role="human", embedding=sbert_model.encode(request.question)),
-            ChatContent(chat_session_id=session_obj.id, content=formatted_prompt.long_answer, role="ai", embedding=sbert_model.encode(formatted_prompt.long_answer))
-        ])
-        
-        await db.commit()
-        db.close()
-        
-        return formatted_prompt
-    except Exception as e:
-        db.rollback()
-        db.close()
-        raise HTTPException(status_code=500, detail=str(e))
+    response= await start_new_chat(request, db, ChatResponse)
+    return response
 
 @router.post("/start-chat/{id}", response_model=ChatResponse, summary="Continue AI chat session")
 async def continue_chat(request: ChatRequest, id: str, db: AsyncSession = Depends(get_session)):
@@ -104,7 +89,7 @@ async def get_chat_session(db: AsyncSession = Depends(get_session)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     5
-@router.get("/chat-session/{id}", response_model=ChatSession, summary='Get chat session by ID')
+@router.get("/chat-session/{id}", response_model=ChatSessionSchema, summary='Get chat session by ID')
 async def get_chat_session_by_id(id, db:AsyncSession=Depends(get_session)):
     try:
         query = select(ChatSession).where(ChatSession.id==id).options(selectinload(ChatSession.chat_content))

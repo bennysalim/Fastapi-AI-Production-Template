@@ -14,7 +14,7 @@ from langchain_groq import ChatGroq
 from datetime import datetime
 from newspaper import Article
 
-from app.model.ticket_trans_model import TicketTransModel
+from app.schemas.ticket_trans_schema import TicketTransSch
 
 load_dotenv()
 
@@ -97,5 +97,5 @@ async def json_builder_api(req:SimplePromptRequest):
     """
     Generate new JSON format
     """
-    response = llm.with_structured_output(TicketTransModel).invoke(req.prompt)
+    response = llm.with_structured_output(TicketTransSch).invoke(req.prompt)
     return response
