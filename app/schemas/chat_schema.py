@@ -14,3 +14,4 @@ class ChatSummary(BaseModel):
 
 class ChatAgentic(ChatResponse):
     invalid_schema_field:list['FieldValidatorSchema']
+    is_schema_valid:bool

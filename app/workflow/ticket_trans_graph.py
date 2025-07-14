@@ -9,6 +9,9 @@ def inference_ticket_intent(state:TicketAgenticChatSch):
 def route_after_intent(state: TicketAgenticChatSch) -> str:
     return state.ticket_agent_inference.name
 
+def validate_field(state:TicketAgenticChatSch)->bool:
+    return state.is_schema_valid
+
 def ticket_creation(state:TicketAgenticChatSch):
     return state
 
@@ -45,7 +48,15 @@ ticket_graph_builder.add_conditional_edges(
     }
 )
 
-ticket_graph_builder.add_edge("ticket_field_validator", "ticket_creation")
+ticket_graph_builder.add_conditional_edges(
+    'ticket_field_validator',
+    validate_field,
+    path_map={
+        True:"ticket_creation",
+        False:"final_node"
+    }
+)
+
 ticket_graph_builder.add_edge("ticket_creation", "final_node")
 ticket_graph_builder.add_edge("retrieve_ticket", "final_node")
 
