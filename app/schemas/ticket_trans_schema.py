@@ -14,5 +14,5 @@ class TicketTransSch(BaseModel):
     type:TicketTypeEnum
 
 class TicketAgenticChatSch(ChatAgentic):
-    schema:TicketTransSch
+    ticket_schema:TicketTransSch
     ticket_agent_inference:TicketInferenceEnum

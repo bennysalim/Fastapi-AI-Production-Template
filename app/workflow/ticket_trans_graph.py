@@ -64,6 +64,4 @@ ticket_graph_builder.add_edge("retrieve_ticket", "final_node")
 ticket_graph_builder.add_edge("final_node", END)
 ticket_graph_builder.set_finish_point("final_node")
 
-
-
 ticket_trans_workflow=ticket_graph_builder.compile()

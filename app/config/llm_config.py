@@ -1,5 +1,5 @@
 # Inisialisasi model (sama dengan GPT-4o di phi)
-from langchain.chat_models import init_chat_model
+from langchain_groq import ChatGroq
+import os
 
-
-llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+llm = ChatGroq(model_name="qwen/qwen3-32b", api_key=os.getenv("GROQ_API_KEY"))
